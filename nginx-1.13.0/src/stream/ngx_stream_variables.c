@@ -51,6 +51,8 @@ static ngx_int_t ngx_stream_variable_time_local(ngx_stream_session_t *s,
 static ngx_int_t ngx_stream_variable_protocol(ngx_stream_session_t *s,
     ngx_stream_variable_value_t *v, uintptr_t data);
 
+static ngx_int_t ngx_stream_variable_noc_conn_id(ngx_stream_session_t *s,
+    ngx_stream_variable_value_t *v, uintptr_t data);
 
 static ngx_stream_variable_t  ngx_stream_core_variables[] = {
 
@@ -110,6 +112,9 @@ static ngx_stream_variable_t  ngx_stream_core_variables[] = {
 
     { ngx_string("protocol"), NULL,
       ngx_stream_variable_protocol, 0, 0, 0 },
+
+    { ngx_string("noc_conn_id"), NULL, ngx_stream_variable_noc_conn_id,
+      0, NGX_STREAM_VAR_NOCACHEABLE, 0 },
 
     { ngx_null_string, NULL, NULL, 0, 0, 0 }
 };
@@ -866,6 +871,40 @@ ngx_stream_variable_protocol(ngx_stream_session_t *s,
     return NGX_OK;
 }
 
+static ngx_int_t
+ngx_stream_variable_noc_conn_id(ngx_stream_session_t *s,
+    ngx_stream_variable_value_t *v, uintptr_t data)
+{
+    ngx_str_t  str;
+    const int NOC_CONN_ID_LEN = 8;
+
+    int len = (char *) s->connection->buffer->last - (char *) s->connection->buffer->pos;
+
+#if 0
+    printf("%s, len: %d, data: %*.*s\n", __func__, len, len, len, (char *) s->connection->buffer->pos);
+    fflush(stdout);
+#endif
+
+    if (len <= NOC_CONN_ID_LEN) {
+        return NGX_ERROR;
+    }
+
+    str.len = NOC_CONN_ID_LEN;
+    str.data = ngx_pnalloc(s->connection->pool, str.len);
+    if (str.data == NULL) {
+        return NGX_ERROR;
+    }
+
+    ngx_memcpy(str.data, (char *) s->connection->buffer->pos + 1, str.len);
+
+    v->len = str.len;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    v->data = str.data;
+
+    return NGX_OK;
+}
 
 void *
 ngx_stream_map_find(ngx_stream_session_t *s, ngx_stream_map_t *map,
