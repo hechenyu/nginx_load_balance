@@ -1,2 +1,2 @@
 #!/bin/sh
-./nginx -p .
+./objs/nginx -p .
