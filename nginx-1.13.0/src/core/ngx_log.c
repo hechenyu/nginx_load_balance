@@ -7,6 +7,7 @@
 
 #include <ngx_config.h>
 #include <ngx_core.h>
+#include <pthread.h>
 
 
 static char *ngx_error_log(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
@@ -93,13 +94,13 @@ static const char *debug_levels[] = {
 #if (NGX_HAVE_VARIADIC_MACROS)
 
 void
-ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
+ngx_log_error_core(const char *file, int line, const char *func, ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
     const char *fmt, ...)
 
 #else
 
 void
-ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
+ngx_log_error_core(const char *file, int line, const char *func, ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
     const char *fmt, va_list args)
 
 #endif
@@ -117,11 +118,15 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
     p = ngx_cpymem(errstr, ngx_cached_err_log_time.data,
                    ngx_cached_err_log_time.len);
 
+    p = ngx_slprintf(p, last, " [%s:%d:%s] ", file, line, func);
+
     p = ngx_slprintf(p, last, " [%V] ", &err_levels[level]);
 
     /* pid#tid */
     p = ngx_slprintf(p, last, "%P#" NGX_TID_T_FMT ": ",
                     ngx_log_pid, ngx_log_tid);
+
+    p = ngx_slprintf(p, last, " [tid:%d] ", (int) pthread_self());
 
     if (log->connection) {
         p = ngx_slprintf(p, last, "*%uA ", log->connection);
