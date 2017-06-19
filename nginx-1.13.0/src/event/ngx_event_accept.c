@@ -612,9 +612,16 @@ ngx_event_recvmsg(ngx_event_t *ev)
             addr.len = ngx_sock_ntop(c->sockaddr, c->socklen, text,
                                      NGX_SOCKADDR_STRLEN, 1);
 
+#if 0
             ngx_log_debug4(NGX_LOG_DEBUG_EVENT, log, 0,
                            "*%uA recvmsg: %V fd:%d n:%z",
                            c->number, &addr, c->fd, n);
+#else
+            ngx_log_debug5(NGX_LOG_DEBUG_EVENT, log, 0,
+                           "*%uA recvmsg: %V fd:%d n:%z, buf:%s",
+                           c->number, &addr, c->fd, n, buffer);
+#endif
+
         }
 
         }

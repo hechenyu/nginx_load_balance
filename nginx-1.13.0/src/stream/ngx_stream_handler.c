@@ -42,6 +42,8 @@ ngx_stream_init_connection(ngx_connection_t *c)
 
     port = c->listening->servers;
 
+    ngx_log_error(NGX_LOG_INFO, c->log, 0, "fd:%d", c->fd);
+
     if (port->naddrs > 1) {
 
         /*

@@ -1033,6 +1033,8 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log)
     ngx_event_t       *rev, *wev;
     ngx_connection_t  *c;
 
+    ngx_log_error(NGX_LOG_DEBUG, log, 0, "s:%d", s);
+
     /* disable warning: Win32 SOCKET is u_int while UNIX socket is int */
 
     if (ngx_cycle->files && (ngx_uint_t) s >= ngx_cycle->files_n) {
