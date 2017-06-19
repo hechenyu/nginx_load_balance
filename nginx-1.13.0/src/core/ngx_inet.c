@@ -7,6 +7,7 @@
 
 #include <ngx_config.h>
 #include <ngx_core.h>
+#include <pthread.h>
 
 
 static ngx_int_t ngx_parse_unix_domain_url(ngx_pool_t *pool, ngx_url_t *u);
@@ -255,6 +256,81 @@ ngx_sock_ntop(struct sockaddr *sa, socklen_t socklen, u_char *text, size_t len,
     }
 }
 
+#define MAX_STR_LEN 128
+
+static pthread_key_t key;
+static pthread_once_t init_done = PTHREAD_ONCE_INIT;
+
+static void thread_init()
+{
+    pthread_key_create(&key, free);
+}
+
+/* include sock_ntop */
+char *
+sock_ntop(const struct sockaddr *sa, socklen_t salen)
+{
+    char		portstr[8];
+    char        *str;       /* Unix domain is largest */
+
+    pthread_once(&init_done, thread_init);
+    str = pthread_getspecific(key);
+    if (str == NULL) {
+        str = malloc(MAX_STR_LEN);
+        pthread_setspecific(key, str);
+    }
+
+	switch (sa->sa_family) {
+	case AF_INET: {
+		struct sockaddr_in	*sin = (struct sockaddr_in *) sa;
+
+		if (inet_ntop(AF_INET, &sin->sin_addr, str, MAX_STR_LEN) == NULL)
+			return(NULL);
+		if (ntohs(sin->sin_port) != 0) {
+			snprintf(portstr, sizeof(portstr), ":%d", ntohs(sin->sin_port));
+			strcat(str, portstr);
+		}
+		return(str);
+	}
+/* end sock_ntop */
+
+#ifdef	IPV6
+	case AF_INET6: {
+		struct sockaddr_in6	*sin6 = (struct sockaddr_in6 *) sa;
+
+		str[0] = '[';
+		if (inet_ntop(AF_INET6, &sin6->sin6_addr, str + 1, MAX_STR_LEN - 1) == NULL)
+			return(NULL);
+		if (ntohs(sin6->sin6_port) != 0) {
+			snprintf(portstr, sizeof(portstr), "]:%d", ntohs(sin6->sin6_port));
+			strcat(str, portstr);
+			return(str);
+		}
+		return (str + 1);
+	}
+#endif
+
+#ifdef	AF_UNIX
+	case AF_UNIX: {
+		struct sockaddr_un	*unp = (struct sockaddr_un *) sa;
+
+			/* OK to have no pathname bound to the socket: happens on
+			   every connect() unless client calls bind() first. */
+		if (unp->sun_path[0] == 0)
+			strcpy(str, "(no pathname bound)");
+		else
+			snprintf(str, MAX_STR_LEN, "%s", unp->sun_path);
+		return(str);
+	}
+#endif
+
+	default:
+		snprintf(str, MAX_STR_LEN, "sock_ntop: unknown AF_xxx: %d, len %d",
+				 sa->sa_family, salen);
+		return(str);
+	}
+    return (NULL);
+}
 
 size_t
 ngx_inet_ntop(int family, void *addr, u_char *text, size_t len)
