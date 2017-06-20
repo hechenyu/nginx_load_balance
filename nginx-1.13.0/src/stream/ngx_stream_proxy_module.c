@@ -903,6 +903,28 @@ ngx_stream_proxy_init_upstream(ngx_stream_session_t *s)
     ngx_stream_proxy_process(s, 0, 1);
 }
 
+void ngx_stream_direct_send(ngx_connection_t *c, void *buff, size_t nbytes)
+{
+    ngx_stream_session_t    *s;
+    ngx_stream_upstream_t   *u;
+    ngx_connection_t        *pc;
+    int n;
+
+    s = c->data;
+    u = s->upstream;
+    pc = u->peer.connection;
+
+    n = send(pc->fd, buff, nbytes, MSG_DONTWAIT);
+    if (n < 0) {
+        ngx_log_error(NGX_LOG_ERR, c->log, 0, 
+                "*%uA direct send fd:%d fail!", c->number, pc->fd);
+    }
+
+#if (NGX_DEBUG)
+    ngx_log_debug3(NGX_LOG_DEBUG_STREAM, c->log, 0, 
+            "*%uA, direct send fd:%d, len:%d", c->number, pc->fd, n);
+#endif
+}
 
 #if (NGX_STREAM_SSL)
 

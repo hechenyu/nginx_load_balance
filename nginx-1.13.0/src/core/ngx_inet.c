@@ -268,7 +268,7 @@ static void thread_init()
 
 /* include sock_ntop */
 char *
-sock_ntop(const struct sockaddr *sa, socklen_t salen)
+ngx_sock_ntop_easy(const struct sockaddr *sa, socklen_t salen)
 {
     char		portstr[8];
     char        *str;       /* Unix domain is largest */
