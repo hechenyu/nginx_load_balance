@@ -36,7 +36,6 @@ ngx_event_accept(ngx_event_t *ev)
 #if (NGX_HAVE_ACCEPT4)
     static ngx_uint_t  use_accept4 = 1;
 #endif
-    unordered_map_t   *conn_map;
 
     if (ev->timedout) {
         if (ngx_enable_accept_events((ngx_cycle_t *) ngx_cycle) != NGX_OK) {
@@ -144,9 +143,6 @@ ngx_event_accept(ngx_event_t *ev)
                               - ngx_cycle->free_connection_n;
 
         c = ngx_get_connection(s, ev->log);
-
-        conn_map = unordered_map_singleton();
-        (void) conn_map;
 
         if (c == NULL) {
             if (ngx_close_socket(s) == -1) {
@@ -338,6 +334,10 @@ ngx_event_recvmsg(ngx_event_t *ev)
     ngx_connection_t  *c, *lc;
     static u_char      buffer[65535];
 
+    unordered_map_t         *conn_map = unordered_map_singleton();
+    unordered_map_key_t      conn_key;
+    unordered_map_value_t    conn_val;
+
 #if (NGX_HAVE_MSGHDR_MSG_CONTROL)
 
 #if (NGX_HAVE_IP_RECVDSTADDR)
@@ -435,6 +435,20 @@ ngx_event_recvmsg(ngx_event_t *ev)
 
         ngx_accept_disabled = ngx_cycle->connection_n / 8
                               - ngx_cycle->free_connection_n;
+
+        conn_key.key = msg.msg_name;
+        conn_key.len = msg.msg_namelen;
+        if (unordered_map_find(conn_map, &conn_key, &conn_val)) {
+#if (NGX_DEBUG)
+            ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ev->log, 0,
+                           "find conn (%s) in map!", ngx_sock_ntop_easy(msg.msg_name, msg.msg_namelen));
+#endif
+        } else {
+#if (NGX_DEBUG)
+            ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ev->log, 0,
+                           "nofound conn (%s) in map!", ngx_sock_ntop_easy(msg.msg_name, msg.msg_namelen));
+#endif
+        }
 
         c = ngx_get_connection(lc->fd, ev->log);
         if (c == NULL) {
@@ -622,9 +636,9 @@ ngx_event_recvmsg(ngx_event_t *ev)
                            "*%uA recvmsg: %V fd:%d n:%z",
                            c->number, &addr, c->fd, n);
 #else
-            ngx_log_debug5(NGX_LOG_DEBUG_EVENT, log, 0,
-                           "*%uA recvmsg: %V fd:%d n:%z, buf:%s",
-                           c->number, &addr, c->fd, n, buffer);
+            ngx_log_debug6(NGX_LOG_DEBUG_EVENT, log, 0,
+                           "*%uA recvmsg: %V fd:%d n:%z, buf:%s, from: %s",
+                           c->number, &addr, c->fd, n, buffer, ngx_sock_ntop_easy(msg.msg_name, msg.msg_namelen));
 #endif
 
         }
@@ -639,6 +653,21 @@ ngx_event_recvmsg(ngx_event_t *ev)
 
         if (ngx_event_flags & NGX_USE_KQUEUE_EVENT) {
             ev->available -= n;
+        }
+
+        conn_key.key = c->sockaddr;
+        conn_key.len = c->socklen;
+        conn_val = c;
+        if (unordered_map_insert(conn_map, &conn_key, conn_val)) {
+#if (NGX_DEBUG)
+            ngx_log_debug2(NGX_LOG_DEBUG_EVENT, ev->log, 0,
+                           "*%uA, insert conn (%s) to map ok!", c->number, ngx_sock_ntop_easy(c->sockaddr, c->socklen));
+#endif
+        } else {
+#if (NGX_DEBUG)
+            ngx_log_debug2(NGX_LOG_DEBUG_EVENT, ev->log, 0,
+                           "*%uA, insert conn (%s) to map fail!", c->number, ngx_sock_ntop_easy(c->sockaddr, c->socklen));
+#endif
         }
 
     } while (ev->available);
