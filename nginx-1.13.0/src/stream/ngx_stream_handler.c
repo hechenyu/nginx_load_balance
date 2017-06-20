@@ -9,6 +9,7 @@
 #include <ngx_core.h>
 #include <ngx_event.h>
 #include <ngx_stream.h>
+#include "unordered_map_extern_c.h"
 
 
 static void ngx_stream_log_session(ngx_stream_session_t *s);
@@ -334,6 +335,23 @@ ngx_stream_close_connection(ngx_connection_t *c)
 
     ngx_log_debug1(NGX_LOG_DEBUG_STREAM, c->log, 0,
                    "close stream connection: %d", c->fd);
+
+    unordered_map_t         *conn_map = unordered_map_singleton();
+    unordered_map_key_t      conn_key;
+
+    conn_key.key = c->sockaddr;
+    conn_key.len = c->socklen;
+    if (unordered_map_delete(conn_map, &conn_key)) {
+#if (NGX_DEBUG)
+        ngx_log_debug2(NGX_LOG_DEBUG_STREAM, c->log, 0,
+                "*%uA, delete conn (%s) from map ok!", c->number, ngx_sock_ntop_easy(c->sockaddr, c->socklen));
+#endif
+    } else {
+#if (NGX_DEBUG)
+        ngx_log_debug2(NGX_LOG_DEBUG_STREAM, c->log, 0,
+                "*%uA, delete fail, no conn (%s) in map!", c->number, ngx_sock_ntop_easy(c->sockaddr, c->socklen));
+#endif
+    }
 
 #if (NGX_STREAM_SSL)
 
