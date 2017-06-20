@@ -65,8 +65,7 @@ cat << END                                                    >> $NGX_MAKEFILE
 
 CORE_DEPS = $ngx_deps
 
-
-CORE_INCS = $ngx_include_opt$ngx_incs
+CORE_INCS = $ngx_include_opt$ngx_incs -I lib/unordered_map_extern_c/lib
 
 END
 

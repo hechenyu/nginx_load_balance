@@ -8,6 +8,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_event.h>
+#include "unordered_map_extern_c.h"
 
 
 static ngx_int_t ngx_enable_accept_events(ngx_cycle_t *cycle);
@@ -35,6 +36,7 @@ ngx_event_accept(ngx_event_t *ev)
 #if (NGX_HAVE_ACCEPT4)
     static ngx_uint_t  use_accept4 = 1;
 #endif
+    unordered_map_t   *conn_map;
 
     if (ev->timedout) {
         if (ngx_enable_accept_events((ngx_cycle_t *) ngx_cycle) != NGX_OK) {
@@ -142,6 +144,9 @@ ngx_event_accept(ngx_event_t *ev)
                               - ngx_cycle->free_connection_n;
 
         c = ngx_get_connection(s, ev->log);
+
+        conn_map = unordered_map_singleton();
+        (void) conn_map;
 
         if (c == NULL) {
             if (ngx_close_socket(s) == -1) {
