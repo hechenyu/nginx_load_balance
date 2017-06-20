@@ -10,6 +10,7 @@
 #include <ngx_event.h>
 #include "unordered_map_extern_c.h"
 
+void ngx_stream_direct_send(ngx_connection_t *c, void *buff, size_t nbytes);
 
 static ngx_int_t ngx_enable_accept_events(ngx_cycle_t *cycle);
 static ngx_int_t ngx_disable_accept_events(ngx_cycle_t *cycle, ngx_uint_t all);
@@ -439,6 +440,9 @@ ngx_event_recvmsg(ngx_event_t *ev)
         conn_key.key = msg.msg_name;
         conn_key.len = msg.msg_namelen;
         if (unordered_map_find(conn_map, &conn_key, &conn_val)) {
+            c = conn_val;
+            ngx_stream_direct_send(c, buffer, n);
+            continue;
 #if (NGX_DEBUG)
             ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ev->log, 0,
                            "find conn (%s) in map!", ngx_sock_ntop_easy(msg.msg_name, msg.msg_namelen));
