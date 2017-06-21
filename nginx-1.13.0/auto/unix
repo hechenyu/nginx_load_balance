@@ -975,3 +975,6 @@ ngx_feature_test='struct addrinfo *res;
                   if (getaddrinfo("localhost", NULL, NULL, &res) != 0) return 1;
                   freeaddrinfo(res)'
 . auto/feature
+
+CORE_LIBS="$CORE_LIBS ./lib/unordered_map_extern_c/lib/libalgo.a -lstdc++"
+

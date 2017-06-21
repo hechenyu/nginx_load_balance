@@ -137,5 +137,3 @@ elif [ "$ngx_module_link" = ADDON ]; then
     done
 fi
 
-CORE_LIBS="$CORE_LIBS ./lib/unordered_map_extern_c/lib/libalgo.a -lstdc++"
-
