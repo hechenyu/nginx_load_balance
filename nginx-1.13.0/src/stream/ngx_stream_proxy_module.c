@@ -914,7 +914,7 @@ void ngx_stream_direct_send(ngx_connection_t *c, void *buff, size_t nbytes)
     u = s->upstream;
     pc = u->peer.connection;
 
-    n = send(pc->fd, buff, nbytes, MSG_DONTWAIT);
+    n = send(pc->fd, buff, nbytes, 0 /* MSG_DONTWAIT */);
     if (n < 0) {
         ngx_log_error(NGX_LOG_ERR, c->log, 0, 
                 "*%uA direct send fd:%d fail!", c->number, pc->fd);
