@@ -442,6 +442,9 @@ ngx_event_recvmsg(ngx_event_t *ev)
         if (unordered_map_find(conn_map, &conn_key, &conn_val)) {
             c = conn_val;
             ngx_stream_direct_send(c, buffer, n);
+            if (ngx_event_flags & NGX_USE_KQUEUE_EVENT) {
+                ev->available -= n;
+            }
             continue;
 #if (NGX_DEBUG)
             ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ev->log, 0,
