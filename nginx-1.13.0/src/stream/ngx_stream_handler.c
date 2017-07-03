@@ -339,6 +339,11 @@ ngx_stream_close_connection(ngx_connection_t *c)
     unordered_map_t         *conn_map = unordered_map_singleton();
     unordered_map_key_t      conn_key;
 
+#if 1
+    ngx_log_error(NGX_LOG_ERR, c->log, 0,
+            "close conn (%s)!", ngx_sock_ntop_easy(c->sockaddr, c->socklen));
+#endif
+
     conn_key.key = c->sockaddr;
     conn_key.len = c->socklen;
     if (unordered_map_delete(conn_map, &conn_key)) {

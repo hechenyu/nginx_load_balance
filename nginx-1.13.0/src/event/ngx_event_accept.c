@@ -440,22 +440,27 @@ ngx_event_recvmsg(ngx_event_t *ev)
         conn_key.key = msg.msg_name;
         conn_key.len = msg.msg_namelen;
         if (unordered_map_find(conn_map, &conn_key, &conn_val)) {
+#if (NGX_DEBUG)
+            ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ev->log, 0,
+                           "find conn (%s) in map!", ngx_sock_ntop_easy(msg.msg_name, msg.msg_namelen));
+#endif
             c = conn_val;
             ngx_stream_direct_send(c, buffer, n);
             if (ngx_event_flags & NGX_USE_KQUEUE_EVENT) {
                 ev->available -= n;
             }
             continue;
-#if (NGX_DEBUG)
-            ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ev->log, 0,
-                           "find conn (%s) in map!", ngx_sock_ntop_easy(msg.msg_name, msg.msg_namelen));
-#endif
         } else {
 #if (NGX_DEBUG)
             ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ev->log, 0,
                            "nofound conn (%s) in map!", ngx_sock_ntop_easy(msg.msg_name, msg.msg_namelen));
 #endif
         }
+
+#if 1
+        ngx_log_error(NGX_LOG_ERR, ev->log, 0,
+                "recvmsg new conn (%s)!", ngx_sock_ntop_easy(msg.msg_name, msg.msg_namelen));
+#endif
 
         c = ngx_get_connection(lc->fd, ev->log);
         if (c == NULL) {
