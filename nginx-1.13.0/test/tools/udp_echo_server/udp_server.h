@@ -4,9 +4,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <unistd.h>
 #include "error.h"
-
+#include "wrapunix.h"
 
 int udp_server(const char *, const char *, socklen_t *);
 int Udp_server(const char *, const char *, socklen_t *);
