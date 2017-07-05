@@ -911,6 +911,7 @@ void ngx_stream_direct_send(ngx_connection_t *c, void *buff, size_t nbytes)
     int n;
 
     s = c->data;
+    s->received += nbytes;  // update receive bytes from client
     u = s->upstream;
     pc = u->peer.connection;
 
@@ -919,6 +920,7 @@ void ngx_stream_direct_send(ngx_connection_t *c, void *buff, size_t nbytes)
         ngx_log_error(NGX_LOG_ERR, c->log, 0, 
                 "*%uA direct send fd:%d fail!", c->number, pc->fd);
     }
+    pc->sent += n;      // update send bytes to upstream
 
 #if (NGX_DEBUG)
     ngx_log_debug3(NGX_LOG_DEBUG_STREAM, c->log, 0, 

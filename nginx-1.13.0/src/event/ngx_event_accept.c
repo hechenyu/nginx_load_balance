@@ -457,11 +457,6 @@ ngx_event_recvmsg(ngx_event_t *ev)
 #endif
         }
 
-#if 1
-        ngx_log_error(NGX_LOG_ERR, ev->log, 0,
-                "recvmsg new conn (%s)!", ngx_sock_ntop_easy(msg.msg_name, msg.msg_namelen));
-#endif
-
         c = ngx_get_connection(lc->fd, ev->log);
         if (c == NULL) {
             return;
