@@ -919,7 +919,8 @@ void ngx_stream_direct_send(ngx_connection_t *c, void *buff, size_t nbytes)
     if (n < 0) {
         ngx_log_error(NGX_LOG_ERR, c->log, 0, 
                 "*%uA direct send fd:%d fail!", c->number, pc->fd);
-    }
+        return;
+    } 
     pc->sent += n;      // update send bytes to upstream
 
 #if (NGX_DEBUG)
